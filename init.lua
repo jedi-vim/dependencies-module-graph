@@ -8,6 +8,11 @@ if not ok_inspect then
   return
 end
 
+local ok_split, split = pcall(require, "split")
+if not ok_split then
+  return
+end
+
 -- Primeiro descobrir quais modulos existem no projeto django
 function find_django_apps(project_root)
   local django_apps = {}
@@ -20,15 +25,46 @@ function find_django_apps(project_root)
   return django_apps
 end
 
+function contains(tbl, file_name)
+  for _, v in ipairs(tbl) do
+    if v == file_name then
+      return true
+    end
+  end
+  return false
+end
+
 local DJANGO_PROJECT_ROOT = "/home/leonam/workspace/cotabest"
 local django_apps = find_django_apps(DJANGO_PROJECT_ROOT)
 
-local py_file = io.lines("/home/leonam/workspace/cotabest/payments/models.py")
-for line in py_file do
-  for app_name, value in pairs(django_apps) do
-    if string.find(line, "from " .. app_name .. ".") then
-      django_apps[app_name] = value + 1
+local PY_FILES = { "models.py", "views.py", "services.py", "serializers.py", "viewsets.py", "forms.py", "utils.py",
+  "tasks.py", "signals.py", "forms.py", "facade.py" }
+local deps_graph = {}
+
+for app_name in pairs(django_apps) do
+  local app_deps_tbl = {}
+  local app_path = paths.concat(DJANGO_PROJECT_ROOT, app_name)
+  for file_name in paths.iterfiles(app_path) do
+    if contains(PY_FILES, file_name) then
+      local file_content = io.lines(paths.concat(DJANGO_PROJECT_ROOT, app_name, file_name))
+      for line in file_content do
+        for django_app in pairs(django_apps) do
+          if django_app ~= app_name then
+            if string.find(line, "from " .. django_app .. ".") then
+              local _, imports = split.first_and_rest(line, "from " .. django_app .. ".")
+              local total_imports = split.split(imports, ",")
+              local value = app_deps_tbl[django_app]
+              if value == nil then
+                value = 0
+              end
+              app_deps_tbl[django_app] = value + #total_imports
+            end
+          end
+        end
+      end
     end
   end
+  deps_graph[app_name] = app_deps_tbl
+  -- break
 end
-print(inspect(django_apps))
+print(inspect(deps_graph))

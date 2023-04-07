@@ -3,11 +3,9 @@ local M = {}
 function resolve_trace_weight(weight)
   if weight < 5 then
     return "~~~"
-  elseif weight >= 5 and weight < 8 then
+  elseif weight >= 5 and weight < 12 then
     return "-.->"
-  elseif weight >= 8 and weight < 15 then
-    return "-->"
-  elseif weight >= 15 then
+  elseif weight >= 12 then
     return "==>"
   end
 end

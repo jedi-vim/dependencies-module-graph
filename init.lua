@@ -87,7 +87,7 @@ for app_name in pairs(django_apps) do
       end
     end
   end
-  -- app_deps_tbl["founded"] = founded_py
   deps_graph[app_name] = app_deps_tbl
 end
-print(inspect(deps_graph))
+local mermaid = require("mermaid")
+mermaid.output_graph(deps_graph)

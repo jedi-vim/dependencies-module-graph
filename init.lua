@@ -1,74 +1,42 @@
-local ok_paths, paths = pcall(require, "paths")
-if not ok_paths then
-  return
-end
+local inspect = require "inspect"
 
-local ok_inspect, inspect = pcall(require, "inspect")
-if not ok_inspect then
-  return
-end
+local mermaid = require "mermaid"
+local split = require "split"
+local dj = require "django"
 
-local ok_split, split = pcall(require, "split")
-if not ok_split then
-  return
-end
-
+-- Inicializar esse modulo passando esse valor
 local DJANGO_PROJECT_ROOT = "/home/leonam/workspace/cotabest"
 
--- Primeiro descobrir quais modulos existem no projeto django
-function find_django_apps(project_root)
-  local django_apps = {}
-  for child_dir in paths.iterdirs(project_root) do
-    local apps_file = paths.concat(project_root, child_dir, "apps.py")
-    if paths.filep(apps_file) then
-      django_apps[child_dir] = 0
-    end
+function compute_total_out(app_tbl)
+  local total = 0
+  for _, count in pairs(app_tbl) do
+    total = total + count
   end
-  return django_apps
+  return total
 end
 
-function find_py_files(dir)
-  local PY_FILES = {
-    "models.py", "views.py", "services.py",
-    "serializers.py", "viewsets.py", "forms.py", "utils.py",
-    "tasks.py", "signals.py", "forms.py", "facade.py", "order_status.py",
-    "order.py", "invoice.py", "order_product.py", "order_status_webhook.py",
-    "order_receipt.py", "order_message.py", "order_precode_data.py", "queries.py"
-  }
-  local app_path = paths.concat(DJANGO_PROJECT_ROOT, dir)
-  local files_tbl = {}
-  for file_name in paths.iterfiles(app_path) do
-    if contains(PY_FILES, file_name) then
-      table.insert(files_tbl, paths.concat(app_path, file_name))
-    end
-  end
-  for sub_dir_name in paths.iterdirs(app_path) do
-    local sub_dir_path = paths.concat(DJANGO_PROJECT_ROOT, dir, sub_dir_name)
-    for file_name in paths.iterfiles(sub_dir_path) do
-      if contains(PY_FILES, file_name) then
-        table.insert(files_tbl, paths.concat(sub_dir_path, file_name))
+function compute_total_in(apps_tbl)
+  local total_in_tbl = {}
+  for app_name, _ in pairs(apps_tbl) do
+    local total_in = 0
+    for _, data in pairs(apps_tbl) do
+      local t = data[app_name]
+      if t ~= nil then
+        total_in = total_in + data[app_name]
       end
     end
+    total_in_tbl[app_name] = total_in
   end
-  return files_tbl
+  return total_in_tbl
 end
 
-function contains(tbl, file_name)
-  for _, v in ipairs(tbl) do
-    if v == file_name then
-      return true
-    end
-  end
-  return false
-end
-
-local django_apps = find_django_apps(DJANGO_PROJECT_ROOT)
+local django_apps = dj.find_django_apps(DJANGO_PROJECT_ROOT)
 local deps_graph = {}
 
 for app_name in pairs(django_apps) do
   local app_deps_tbl = {}
   local app_path = paths.concat(DJANGO_PROJECT_ROOT, app_name)
-  local founded_py = find_py_files(app_path)
+  local founded_py = dj.find_py_files(DJANGO_PROJECT_ROOT, app_path)
   for _, file_path in ipairs(founded_py) do
     local file_content = io.lines(file_path)
     for line in file_content do
@@ -88,6 +56,8 @@ for app_name in pairs(django_apps) do
     end
   end
   deps_graph[app_name] = app_deps_tbl
+  deps_graph[app_name]["total_out"] = compute_total_out(app_deps_tbl)
 end
-local mermaid = require("mermaid")
-mermaid.output_graph(deps_graph)
+
+local output = mermaid.output_graph(deps_graph)
+print(output)

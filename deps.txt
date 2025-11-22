@@ -1,0 +1,2 @@
+lpath	0.4.0-1	installed	/home/leonam/.luarocks/lib/luarocks/rocks-5.4
+split	3.2.1-1	installed	/home/leonam/.luarocks/lib/luarocks/rocks-5.4

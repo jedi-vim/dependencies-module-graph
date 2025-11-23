@@ -40,10 +40,12 @@ for module_name in pairs(py_modules_founded) do
       -- Para cada linha com import statement
       if string.find(line, "from%s+.+%s+import") then
 
+        -- Para cada outro modulo ja encontrado
         for other_module_name in pairs(py_modules_founded) do
           if module_name ~= other_module_name then
-            if string.find(line, other_module_name) then
-              -- print("Arquivo: " .. file_path .. " Linha: " .. line)
+            -- Se esse outro modulo esta presente no import no modulo em analise
+            -- print("Arquivo: " .. file_path .. " Linha: " .. line .. " other: " .. other_module_name)
+            if string.find(line, "." .. other_module_name) or string.find(line, other_module_name .. ".") then
               local _, imports = split.first_and_rest(line, "from%s+.+%s+import")
 
               if imports ~= nil then

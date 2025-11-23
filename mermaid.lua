@@ -23,12 +23,12 @@ M.output_graph = function(deps_tbl)
           if deps_string == "" then
             deps_string = deps_string .. string.format("%s %s %s", app_name, line_type, deps)
           else
-            deps_string = deps_string .. string.format(" & %s %s %s", app_name, line_type, deps)
+            deps_string = deps_string .. string.format(" \n %s %s %s", app_name, line_type, deps)
           end
         end
       end
+      out = out .. deps_string .. "\n"
     end
-    out = out .. deps_string .. "\n"
   end
   return out
 end
